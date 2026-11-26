@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pos_config_view_form_agora" model="ir.ui.view">
+        <field name="name">pos.config.form.agora</field>
+        <field name="model">pos.config</field>
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='title']" position="after">
+                <div class="row mt16 o_settings_container">
+                    <div class="col-12 col-lg-6 o_setting_box">
+                        <div class="o_setting_left_pane">
+                            <field name="is_agora"/>
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <label for="is_agora"/>
+                            <div class="text-muted">
+                                Aquest punt de venda s'integra amb Àgora.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <group string="Integració Àgora"
+                       groups="base.group_system"
+                       attrs="{'invisible': [('is_agora', '=', False)]}">
+                    <field name="agora_api_url" placeholder="https://..."/>
+                    <field name="agora_api_token" password="True"/>
+                </group>
+            </xpath>
+            <xpath expr="//div[@id='other_devices']/ancestor::div[hasclass('o_settings_container')][1]"
+                   position="attributes">
+                <attribute name="attrs">{'invisible': [('is_agora', '=', True)]}</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('o_settings_container')][.//field[@name='module_pos_restaurant']]"
+                   position="attributes">
+                <attribute name="attrs">{'invisible': [('is_agora', '=', True)]}</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
