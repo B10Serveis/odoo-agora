@@ -1,9 +1,11 @@
 import ast
 import json
+from unittest.mock import Mock, patch
 
+import requests
 from lxml import etree
 
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase, tagged
 
 
@@ -69,13 +71,17 @@ class TestAgoraPosConfig(TransactionCase):
         self.assertEqual(
             arch.xpath("//field[@name='agora_api_token']/@password"), ["True"]
         )
+        self.assertEqual(
+            arch.xpath("//button[@name='action_test_agora_connection']/@type"),
+            ["object"],
+        )
         for field_name in ("agora_api_url", "agora_api_token"):
             self.assertEqual(
                 self.config._fields[field_name].groups, "base.group_system"
             )
 
     def test_odoo_pos_options_are_hidden_for_agora(self):
-        view = self.env["pos.config"].fields_view_get(
+        view = self.env["pos.config"].get_view(
             view_id=self.env.ref("point_of_sale.pos_config_view_form").id,
             view_type="form",
         )
@@ -92,7 +98,7 @@ class TestAgoraPosConfig(TransactionCase):
 
         create_view = self.env["pos.config"].with_context(
             pos_config_create_mode=True
-        ).fields_view_get(
+        ).get_view(
             view_id=self.env.ref("point_of_sale.pos_config_view_form").id,
             view_type="form",
         )
@@ -115,7 +121,7 @@ class TestAgoraPosConfig(TransactionCase):
         })
         self.assertTrue(settings.pos_config_is_agora)
 
-        view = self.env["res.config.settings"].fields_view_get(
+        view = self.env["res.config.settings"].get_view(
             view_id=self.env.ref(
                 "point_of_sale.res_config_settings_view_form"
             ).id,
@@ -132,3 +138,77 @@ class TestAgoraPosConfig(TransactionCase):
         )
         self.assertTrue(arch.xpath("//field[@name='pos_config_is_agora']"))
         self.assertTrue(arch.xpath("//field[@name='pos_config_id']"))
+
+    def test_agora_connection_check_success(self):
+        self.config.write({
+            "is_agora": True,
+            "agora_api_url": "https://agora.example.test:8984/",
+            "agora_api_token": "secret-api-token",
+        })
+        with patch(
+            "odoo.addons.agora_integration.models.pos_config.requests.get",
+            return_value=Mock(status_code=200),
+        ) as http_get:
+            action = self.config.action_test_agora_connection()
+
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertEqual(action["params"]["type"], "success")
+        http_get.assert_called_once_with(
+            "https://agora.example.test:8984/api/export-master/",
+            params={"filter": "WorkplacesSummary"},
+            headers={
+                "Api-Token": "secret-api-token",
+                "Accept": "application/json",
+            },
+            timeout=10,
+            allow_redirects=False,
+        )
+
+    def test_agora_connection_check_reports_authentication_failure(self):
+        self.config.write({
+            "is_agora": True,
+            "agora_api_url": "https://agora.example.test:8984",
+            "agora_api_token": "invalid-api-token",
+        })
+        with patch(
+            "odoo.addons.agora_integration.models.pos_config.requests.get",
+            return_value=Mock(status_code=401),
+        ):
+            action = self.config.action_test_agora_connection()
+
+        self.assertEqual(action["params"]["type"], "danger")
+        self.assertIn("401", action["params"]["message"])
+
+    def test_agora_connection_check_handles_timeout(self):
+        self.config.write({
+            "is_agora": True,
+            "agora_api_url": "https://agora.example.test:8984",
+            "agora_api_token": "secret-api-token",
+        })
+        with patch(
+            "odoo.addons.agora_integration.models.pos_config.requests.get",
+            side_effect=requests.exceptions.Timeout,
+        ):
+            action = self.config.action_test_agora_connection()
+
+        self.assertEqual(action["params"]["type"], "warning")
+
+    def test_agora_connection_check_requires_admin_and_configuration(self):
+        pos_manager = self.env["res.users"].create({
+            "name": "Agora POS manager for connection test",
+            "login": "agora_pos_manager_connection",
+            "groups_id": [
+                (6, 0, [
+                    self.env.ref("base.group_user").id,
+                    self.env.ref("point_of_sale.group_pos_manager").id,
+                ]),
+            ],
+        })
+        with self.assertRaises(AccessError):
+            self.config.with_user(pos_manager).action_test_agora_connection()
+        with self.assertRaises(UserError):
+            self.config.action_test_agora_connection()
+
+        self.config.is_agora = True
+        with self.assertRaises(UserError):
+            self.config.action_test_agora_connection()
