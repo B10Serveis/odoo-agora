@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pos_agora_tax_manager,pos.agora.tax manager,model_pos_agora_tax,point_of_sale.group_pos_manager,1,1,0,0
+access_pos_agora_tax_system,pos.agora.tax system,model_pos_agora_tax,base.group_system,1,1,0,0
+access_pos_agora_tax_import_wizard_manager,pos.agora.tax.import.wizard manager,model_pos_agora_tax_import_wizard,point_of_sale.group_pos_manager,1,1,1,1
+access_pos_agora_tax_import_wizard_system,pos.agora.tax.import.wizard system,model_pos_agora_tax_import_wizard,base.group_system,1,1,1,1

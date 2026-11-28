@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_agora_tax_tree" model="ir.ui.view">
+        <field name="name">pos.agora.tax.tree</field>
+        <field name="model">pos.agora.tax</field>
+        <field name="arch" type="xml">
+            <tree string="Impostos d'Àgora"
+                  create="false"
+                  delete="false"
+                  editable="bottom"
+                  decoration-muted="not enabled"
+                  decoration-warning="mapping_status != 'mapped'">
+                <field name="company_id" invisible="1"/>
+                <field name="pos_config_id" readonly="1"/>
+                <field name="agora_id" string="ID Àgora" readonly="1"/>
+                <field name="name" string="Impost d'Àgora" readonly="1"/>
+                <field name="vat_rate" string="IVA Àgora" widget="percentage" readonly="1"/>
+                <field name="surcharge_rate" string="Recàrrec Àgora" widget="percentage" readonly="1"/>
+                <field name="enabled" readonly="1"/>
+                <field name="odoo_tax_id" options="{'no_create': True}"/>
+                <field name="odoo_surcharge_tax_id" options="{'no_create': True}"/>
+                <field name="mapping_status"/>
+                <field name="last_imported_at" optional="hide" readonly="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_pos_agora_tax_form" model="ir.ui.view">
+        <field name="name">pos.agora.tax.form</field>
+        <field name="model">pos.agora.tax</field>
+        <field name="arch" type="xml">
+            <form string="Impost d'Àgora">
+                <sheet>
+                    <group>
+                        <group string="Dades d'Àgora">
+                            <field name="pos_config_id" readonly="1"/>
+                            <field name="agora_id"/>
+                            <field name="name"/>
+                            <field name="vat_rate" widget="percentage"/>
+                            <field name="surcharge_rate" widget="percentage"/>
+                            <field name="enabled"/>
+                            <field name="last_imported_at"/>
+                        </group>
+                        <group string="Mapping amb Odoo">
+                            <field name="company_id" invisible="1"/>
+                            <field name="odoo_tax_id" options="{'no_create': True}"/>
+                            <field name="odoo_surcharge_tax_id" options="{'no_create': True}"/>
+                            <field name="mapping_status" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pos_agora_tax_search" model="ir.ui.view">
+        <field name="name">pos.agora.tax.search</field>
+        <field name="model">pos.agora.tax</field>
+        <field name="arch" type="xml">
+            <search string="Impostos d'Àgora">
+                <field name="name" string="Impost d'Àgora"/>
+                <field name="agora_id"/>
+                <field name="pos_config_id"/>
+                <field name="odoo_tax_id"/>
+                <filter name="unmapped" string="Pendents de mapar"
+                        domain="[('mapping_status', '=', 'unmapped')]"/>
+                <filter name="partial" string="Mapping parcial"
+                        domain="[('mapping_status', '=', 'partial')]"/>
+                <filter name="rate_mismatch" string="Tipus impositiu diferent"
+                        domain="[('mapping_status', '=', 'rate_mismatch')]"/>
+                <filter name="disabled" string="Desactivats a Àgora"
+                        domain="[('enabled', '=', False)]"/>
+                <group expand="0" string="Agrupa per">
+                    <filter name="group_by_pos_config" string="Punt de venda"
+                            context="{'group_by': 'pos_config_id'}"/>
+                    <filter name="group_by_enabled" string="Estat a Àgora"
+                            context="{'group_by': 'enabled'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pos_agora_tax" model="ir.actions.act_window">
+        <field name="name">Impostos d'Àgora</field>
+        <field name="res_model">pos.agora.tax</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_pos_agora_tax_search"/>
+        <field name="context">{'search_default_group_by_pos_config': 1}</field>
+    </record>
+</odoo>

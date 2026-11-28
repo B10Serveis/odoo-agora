@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_agora_tax_import_wizard_form" model="ir.ui.view">
+        <field name="name">pos.agora.tax.import.wizard.form</field>
+        <field name="model">pos.agora.tax.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Impostos d'Àgora">
+                <group>
+                    <field name="pos_config_id"
+                           domain="[('is_agora', '=', True)]"
+                           options="{'no_create': True}"/>
+                    <div class="text-muted">
+                        Selecciona el punt de venda Àgora per consultar o actualitzar el seu catàleg d'impostos.
+                    </div>
+                </group>
+                <footer>
+                    <button name="action_view_taxes" type="object"
+                            string="Veure mapping" class="btn-secondary"
+                            attrs="{'invisible': [('pos_config_id', '=', False)]}"/>
+                    <button name="action_import_taxes" type="object"
+                            string="Importar / actualitzar" class="btn-primary"
+                            attrs="{'invisible': [('pos_config_id', '=', False)]}"/>
+                    <button string="Tancar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pos_agora_tax_import_wizard" model="ir.actions.act_window">
+        <field name="name">Impostos d'Àgora</field>
+        <field name="res_model">pos.agora.tax.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_pos_agora_tax_import_wizard_form"/>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_pos_agora_root"
+              name="Àgora"
+              parent="point_of_sale.menu_point_root"
+              sequence="70"
+              groups="point_of_sale.group_pos_manager,base.group_system"/>
+    <menuitem id="menu_pos_agora_taxes"
+              name="Impostos"
+              parent="menu_pos_agora_root"
+              action="action_pos_agora_tax_import_wizard"
+              sequence="10"
+              groups="point_of_sale.group_pos_manager,base.group_system"/>
+</odoo>
